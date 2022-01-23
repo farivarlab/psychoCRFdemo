@@ -1,3 +1,6 @@
+% Based on [Meese, T. S., et al. (2007). "Contextual modulation involves
+% suppression and facilitation from the center and the surround." Journal
+% of Vision 7(4): 21.]
 
 
 clear all
