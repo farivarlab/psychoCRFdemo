@@ -142,6 +142,8 @@ ylabel('Contrast Detection Threshold (%contrast)')
 ax.PlotBoxAspectRatio = [1 1 1];
 uistack([hPlot1_scat hPlot1_base hPlot7_scat hPlot7_base],'top')
 
+legend([hPlot1_scat hPlot7_scat hPatch1 hPatch7],{'large 1cpd grating' 'small 7cpd grating' 'suppression' 'facilitation'},'box','off','location','west')
+
 return
 %% Export figures
 curF = f;
