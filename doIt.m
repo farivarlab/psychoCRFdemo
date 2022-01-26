@@ -2,6 +2,9 @@
 % suppression and facilitation from the center and the surround." Journal
 % of Vision 7(4): 21.]
 
+% By Sébastien Proulx, sebastien.proul2@mail.mcgill.ca, https://orcid.org/0000-0003-1709-3277 
+% License: CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
 
 
 clear all
