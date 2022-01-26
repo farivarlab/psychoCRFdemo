@@ -1,16 +1,22 @@
-% Based on [Meese, T. S., et al. (2007). "Contextual modulation involves
-% suppression and facilitation from the center and the surround." Journal
-% of Vision 7(4): 21.]
-
+% Illustration of how signal detection theory allows to extract a
+% psychophysical contrast response function (CRF) from the threshold vs
+% contrast (TvC) function. It additionally shows how a constant cross
+% oriented mask affects the CRF.
+%
 % By Sébastien Proulx, sebastien.proul2@mail.mcgill.ca, https://orcid.org/0000-0003-1709-3277 
 % License: CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
-
-
+% Published on GitHub (https://github.com/farivarlab/psychoCRFdemo)
+%
+% Based on data, models and fits from [Meese, T. S., et al. (2007). "Contextual modulation involves
+% suppression and facilitation from the center and the surround." Journal
+% of Vision 7(4): 21.].
+%
+% Extra (doIt_crossOriented.m): Replotting of other data from the same
+% paper to show how cross-oriented overlay masks at different contrasts can
+% either facilitate or suppress contrast perception at threshold.
 
 clear all
 close all
-
-
 %% Meese's data (observer RJS)
 meeseC_dB       = [-inf 8 14 20 30];
 meeseT_dB       = [8.93150684931507 -1.2054794520547922 2.7945205479452078 5.698630136986306 11.780821917808222];
@@ -19,6 +25,7 @@ meeseTmasked_dB = [4.986301369863018 0.43835616438356695 6.849315068493151 12.60
 meeseC       = 10.^(meeseC_dB./20);
 meeseT       = 10.^(meeseT_dB./20);
 meeseTmasked = 10.^(meeseTmasked_dB./20);
+
 
 %% Meese's parameters (observer RJS)
 param.p = 3.11;
@@ -276,6 +283,8 @@ curExt = 'fig';
 saveas(curF,[fullfilename '.' curExt]); disp([fullfilename '.' curExt]);
 curExt = 'jpg';
 saveas(curF,[fullfilename '.' curExt]); disp([fullfilename '.' curExt]);
+
+
 
 
 
