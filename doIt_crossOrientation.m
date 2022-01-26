@@ -142,7 +142,9 @@ ylabel('Contrast Detection Threshold (%contrast)')
 ax.PlotBoxAspectRatio = [1 1 1];
 uistack([hPlot1_scat hPlot1_base hPlot7_scat hPlot7_base],'top')
 
-legend([hPlot1_scat hPlot7_scat hPatch1 hPatch7],{'large 1cpd grating' 'small 7cpd grating' 'suppression' 'facilitation'},'box','off','location','west')
+legend([hPlot1_scat hPlot7_scat hPatch1 hPatch7],{'large 1cpd gratings' 'small 7cpd gratings' 'suppression' 'facilitation'},'box','off','location','west')
+
+title({'Cross-Oriented Overlay Masks Can' 'Suppress or Faciliate Contrast Detection'})
 
 return
 %% Export figures
