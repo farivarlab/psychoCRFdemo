@@ -101,6 +101,9 @@ f.Color = 'w';
 
 
 %% Visualize masking effect
+if c(1)~=0
+    c = [0 c];
+end
 % Set masks
 cX = [0 10 75];
 % Compute CRF and TvC
@@ -110,18 +113,31 @@ for i = 1:length(cX)
     rc(i,:)= transducerFun(c,param,cX(i));
     tc(i,:) = SDT(c,rc(i,:),param);
 end
+%deal with 0% pedestral contrast seperatly to avoid infinity
+if c(1)==0
+    c0 = c(:,1);
+    c(:,1) = [];
+    rc0 = rc(:,1);
+    rc(:,1) = [];
+    tc0 = tc(:,1);
+    tc(:,1) = [];
+end
+
 % Plot
 fX = figure('windowstyle','docked');
 axr = subplot(2,1,2);
-hr = semilogy(log(c/100),rc); hold on
+% hr = semilogy(log(c/100),rc); hold on
+hr = plot(log(c/100),rc); hold on
 legLabel = {'pedestal only' '+ 10% mask' '+ 75% mask'};
-hLeg = legend(legLabel,'location','southeast','box','off');
+hLeg = legend(legLabel,'location','best','box','off');
 % hLeg = legend(cellstr([num2str(cX') repmat('%',length(cX),1)]),'location','best');
 % title(hLeg,'mask contrast')
 ylabel({'transducer response' '(a.u.)'})
 xlabel('pedestal  ( log(contrast) )')
 % xlabel({'pedestal' '( log(contrast) )'})
-% xlim([log(min(c)/100) log(max(c)/100)])
+axis tight
+drawnow
+xlim([log(min(c)/100) log(max(c)/100)])
 xlim([log(min(c)/100) log(xMax/100)]); drawnow
 title('Contrast Response Function')
 tickMin = ceil(axr.XTick(1)/delta)*delta;
@@ -131,10 +147,13 @@ box off
 
 axt = subplot(2,1,1);
 ht = plot(log(c/100),log(tc/100)); hold on
-ht0 = plot(xlim,[1 1].*log(meeseT(1)/100),'k:');
+for i = 1:length(ht)
+    ht0(i) = plot(log(c([1 end])/100),[1 1].*log(tc0(i)/100),':','color',ht(i).Color); hold on
+end
 % hLeg = legend(ht,cellstr([num2str(cX') repmat('%',length(cX),1)]),'location','best');
 % title(hLeg,'mask contrast')
 ylabel({'contrast increment threshold' '( log(contrast) )'})
+axis tight
 xlim([log(min(c)/100) log(xMax/100)]); drawnow
 axt.DataAspectRatio = [1 1 1];
 xlim([log(min(c)/100) log(xMax/100)]); drawnow
@@ -176,11 +195,8 @@ scatter([xMin log(meeseC(2:end)/100)],log(meeseT/100),'ok')
 scatter([xMin log(meeseC(2:end)/100)],log(meeseTmasked/100),'or')
 
 
-% Add %contrast axis
+% Change to %contrast axis
 xPerc = [0.1:0.1:1 1:10 10:10:30]; xPerc = sort(unique(xPerc));
-% xPerc = [1:4 5:5:(exp(max(axt.XLim))*100)];
-% axt.XTick = [min(axt.XLim) log(xPerc/100)];
-% axt.XTickLabel = cellstr(num2str([0 xPerc]'))
 axt.XTick = log(xPerc/100);
 xPercLabel = cellstr(num2str(xPerc'));
 xPercLabel(~ismember(xPerc,[1 10])) = {''};
@@ -188,12 +204,75 @@ axt.XTickLabel = xPercLabel;
 axt.XTickLabelRotation = 0;
 axt.XAxis.Label.String = 'pedestal  ( %contrast) )';
 
-xlabel('pedestal  ( log(contrast) )')
+
+delta = 1;
+yPerc = round(exp(axt.YLim)*100/delta)*delta;
+yPerc = yPerc(1):delta:yPerc(2);
+axt.YTick = log(yPerc/100);
+yPercLabel = cellstr(num2str(yPerc'));
+% delta = 1;
+% yPercLabel(~ismember(yPerc,unique(round(yPerc/delta).*delta))) = {''};
+axt.YTickLabel = yPercLabel;
+axt.YAxis.Label.String = {'contrast increment threshold' '(%contrast)'};
 
 
 
+xlabel('pedestal %contrast')
+
+delta = 1;
+tickMin = ceil(axr.YLim(1)/delta)*delta;
+tickMax = floor(axr.YLim(end)/delta)*delta;
+axr.YTick = tickMin:delta:tickMax;
+
+% axr.YTick = [0.0001    0.0100    1.0000  100.0000];
+
+for i = 1:length(ht0)
+    ht0(i).Color = ht(i).Color;
+end
 
 
-axr.YTick = [0.0001    0.0100    1.0000  100.0000];
+
+return
+%% Export figures
+curF = fr;
+fullfilename = fullfile(pwd,'CRFandSDT');
+figure(curF)
+curF.WindowStyle = 'normal';
+curF.Color = 'none';
+set(findobj(curF.Children,'type','Axes'),'color','none')
+drawnow
+% curFile = fullfilename;
+% curExt = 'eps';
+% exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
+curExt = 'svg';
+saveas(curF,[fullfilename '.' curExt]); disp([fullfilename '.' curExt])
+curF.Color = 'w';
+curExt = 'fig';
+saveas(curF,[fullfilename '.' curExt]); disp([fullfilename '.' curExt]);
+curExt = 'jpg';
+saveas(curF,[fullfilename '.' curExt]); disp([fullfilename '.' curExt]);
+
+
+curF = fX;
+fullfilename = fullfile(pwd,'CRFandCvT');
+figure(curF)
+curF.WindowStyle = 'normal';
+curF.Color = 'none';
+set(findobj(curF.Children,'type','Axes'),'color','none')
+drawnow
+ax = findobj(curF.Children,'type','axes');
+ax(1).Position([1 3]) = ax(2).Position([1 3])
+drawnow
+% curFile = fullfilename;
+% curExt = 'eps';
+% exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
+curExt = 'svg';
+saveas(curF,[fullfilename '.' curExt]); disp([fullfilename '.' curExt])
+curF.Color = 'w';
+curExt = 'fig';
+saveas(curF,[fullfilename '.' curExt]); disp([fullfilename '.' curExt]);
+curExt = 'jpg';
+saveas(curF,[fullfilename '.' curExt]); disp([fullfilename '.' curExt]);
+
 
 

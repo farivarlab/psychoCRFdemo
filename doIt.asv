@@ -101,8 +101,12 @@ f.Color = 'w';
 
 
 %% Visualize masking effect
+c(c<0.15) = [];
+if c(1)~=0
+    c = [0 c];
+end
 % Set masks
-cX = [0 10];
+cX = [0 10 75];
 % Compute CRF and TvC
 rc = nan(length(cX),length(c));
 tc = nan(length(cX),length(c));
@@ -110,17 +114,31 @@ for i = 1:length(cX)
     rc(i,:)= transducerFun(c,param,cX(i));
     tc(i,:) = SDT(c,rc(i,:),param);
 end
+%deal with 0% pedestral contrast seperatly to avoid infinity
+if c(1)==0
+    c0 = c(:,1);
+    c(:,1) = [];
+    rc0 = rc(:,1);
+    rc(:,1) = [];
+    tc0 = tc(:,1);
+    tc(:,1) = [];
+end
+
 % Plot
 fX = figure('windowstyle','docked');
 axr = subplot(2,1,2);
-hr = semilogy(log(c/100),rc); hold on
-legLabel = {}
-hLeg = legend(cellstr([num2str(cX') repmat('%',length(cX),1)]),'location','best');
-title(hLeg,'mask contrast')
+% hr = semilogy(log(c/100),rc); hold on
+hr = plot(log(c/100),rc); hold on
+legLabel = {'pedestal only' '+ 10% mask' '+ 75% mask'};
+hLeg = legend(legLabel,'location','best','box','off');
+% hLeg = legend(cellstr([num2str(cX') repmat('%',length(cX),1)]),'location','best');
+% title(hLeg,'mask contrast')
 ylabel({'transducer response' '(a.u.)'})
 xlabel('pedestal  ( log(contrast) )')
 % xlabel({'pedestal' '( log(contrast) )'})
-% xlim([log(min(c)/100) log(max(c)/100)])
+axis tight
+drawnow
+xlim([log(min(c)/100) log(max(c)/100)])
 xlim([log(min(c)/100) log(xMax/100)]); drawnow
 title('Contrast Response Function')
 tickMin = ceil(axr.XTick(1)/delta)*delta;
@@ -130,10 +148,13 @@ box off
 
 axt = subplot(2,1,1);
 ht = plot(log(c/100),log(tc/100)); hold on
-ht0 = plot(xlim,[1 1].*log(meeseT(1)/100),'k:');
-hLeg = legend(ht,cellstr([num2str(cX') repmat('%',length(cX),1)]),'location','best');
-title(hLeg,'mask contrast')
+for i = 1:length(ht)
+    ht0(i) = plot(log(c([1 end])/100),[1 1].*log(tc0(i)/100),':','color',ht(i).Color); hold on
+end
+% hLeg = legend(ht,cellstr([num2str(cX') repmat('%',length(cX),1)]),'location','best');
+% title(hLeg,'mask contrast')
 ylabel({'contrast increment threshold' '( log(contrast) )'})
+axis tight
 xlim([log(min(c)/100) log(xMax/100)]); drawnow
 axt.DataAspectRatio = [1 1 1];
 xlim([log(min(c)/100) log(xMax/100)]); drawnow
@@ -175,191 +196,85 @@ scatter([xMin log(meeseC(2:end)/100)],log(meeseT/100),'ok')
 scatter([xMin log(meeseC(2:end)/100)],log(meeseTmasked/100),'or')
 
 
-% Add %contrast axis
+% Change to %contrast axis
 xPerc = [0.1:0.1:1 1:10 10:10:30]; xPerc = sort(unique(xPerc));
-% xPerc = [1:4 5:5:(exp(max(axt.XLim))*100)];
-% axt.XTick = [min(axt.XLim) log(xPerc/100)];
-% axt.XTickLabel = cellstr(num2str([0 xPerc]'))
 axt.XTick = log(xPerc/100);
 xPercLabel = cellstr(num2str(xPerc'));
 xPercLabel(~ismember(xPerc,[1 10])) = {''};
 axt.XTickLabel = xPercLabel;
 axt.XTickLabelRotation = 0;
+axt.XAxis.Label.String = 'pedestal  ( %contrast) )';
 
-axr.YTick = [0.0001    0.0100    1.0000  100.0000];
+
+delta = 0.1;
+yPerc = round(exp(axt.YLim)*100/delta)*delta;
+yPerc = yPerc(1):delta:yPerc(2);
+% yPerc = [0.1:0.1:1 1:10 10:10:30]; xPerc = sort(unique(xPerc));
+axt.YTick = log(yPerc/100);
+yPercLabel = cellstr(num2str(yPerc'));
+delta = 1;
+yPercLabel(~ismember(yPerc,unique(round(yPerc/delta).*delta))) = {''};
+axt.YTickLabel = yPercLabel;
+axt.YAxis.Label.String = {'contrast increment threshold' '(%contrast)'};
+
+
+
+xlabel('pedestal %contrast')
+
+delta = 1;
+tickMin = ceil(axr.YLim(1)/delta)*delta;
+tickMax = floor(axr.YLim(end)/delta)*delta;
+axr.YTick = tickMin:delta:tickMax;
+
+% axr.YTick = [0.0001    0.0100    1.0000  100.0000];
+
+for i = 1:length(ht0)
+    ht0(i).Color = ht(i).Color;
+end
+
+
 
 return
-% Visualize test stimulus responser regime
-log(meeseT(1)/100)
-log(meeseTmasked(1)/100)
-htP0 = patch(x,y,'k');
-htP0.FaceAlpha = 0.05;
-htP0.EdgeColor = 'none';
-delete(ht0)
-uistack(htP0,'bottom')
-return
+%% Export figures
+curF = fr;
+fullfilename = fullfile(pwd,'CRFandSDT');
+figure(curF)
+curF.WindowStyle = 'normal';
+curF.Color = 'none';
+set(findobj(curF.Children,'type','Axes'),'color','none')
+drawnow
+% curFile = fullfilename;
+% curExt = 'eps';
+% exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
+curExt = 'svg';
+saveas(curF,[fullfilename '.' curExt]); disp([fullfilename '.' curExt])
+curF.Color = 'w';
+curExt = 'fig';
+saveas(curF,[fullfilename '.' curExt]); disp([fullfilename '.' curExt]);
+curExt = 'jpg';
+saveas(curF,[fullfilename '.' curExt]); disp([fullfilename '.' curExt]);
 
 
+curF = fX;
+fullfilename = fullfile(pwd,'CRFandCvT');
+figure(curF)
+curF.WindowStyle = 'normal';
+curF.Color = 'none';
+set(findobj(curF.Children,'type','Axes'),'color','none')
+drawnow
+ax = findobj(curF.Children,'type','axes');
+ax(1).Position([1 3]) = ax(2).Position([1 3])
+drawnow
+% curFile = fullfilename;
+% curExt = 'eps';
+% exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
+curExt = 'svg';
+saveas(curF,[fullfilename '.' curExt]); disp([fullfilename '.' curExt])
+curF.Color = 'w';
+curExt = 'fig';
+saveas(curF,[fullfilename '.' curExt]); disp([fullfilename '.' curExt]);
+curExt = 'jpg';
+saveas(curF,[fullfilename '.' curExt]); disp([fullfilename '.' curExt]);
 
 
-% figure('windowstyle','docked')
-% cTmp = log(c);
-% plot(cTmp,resp); hold on
-% plot(cTmp,resp2); hold on
-% plot(cTmp,resp3); hold on
-
-% figure('windowstyle','docked')
-% cTmp = c;
-% plot(cTmp,resp); hold on
-% plot(cTmp,resp2); hold on
-% plot(cTmp,resp3); hold on
-
-
-% figure('windowstyle','docked')
-% cTmp = log(c);
-% plot(cTmp,log(resp)); hold on
-% plot(cTmp,log(resp2)); hold on
-% plot(cTmp,log(resp3)); hold on
-
-
-
-%% Use signal detection theory to get detection thresholds
-k = param.k;
-[X,Y] = meshgrid(rc,rc);
-rMat = Y - X; clear X Y
-
-% figure('windowstyle','docked')
-% contour(rMat,linspace(min(rMat(:)),max(rMat(:)),100));
-% hold on
-% contour(rMat,[k k],'k');
-% figure('windowstyle','docked')
-% imagesc(rMat); hold on;
-% ax = gca; ax.YDir = 'normal';
-% iq = contour(rMat,[k k]);
-iq = contourc(rMat,[k k]);
-iq(:,1) = [];
-
-i = 1:length(c);
-cq = exp(interp1(i,log(c),iq));
-cqt = cq(2,:) - cq(1,:);
-cq = cq(1,:);
-[cq,i] = sort(cq);
-cqt = cqt(i);
-
-
-figure('windowstyle','docked')
-ax1 = subplot(4,1,1);
-plot(cq,cqt); hold on
-ax1.DataAspectRatio = [1 1 1];
-% yLim = ylim; yLim(1) = 0; yLim(2) = 10; ylim(yLim)
-ylabel({'contrast' 'increment' 'threshold'})
-xlim([0 80])
-plot(xlim,cqt([1 1]),':k'); hold on
-box off
-ax2 = subplot(4,1,2:4);
-plot(c,rc); hold on
-plot(c,rX); hold on
-% yLim = ylim; yLim(2) = 12; ylim(yLim)
-ylabel('transducer response')
-xlabel('contrast pedestal')
-xlim([0 80])
-box off
-
-
-[a,b] = min(cqt);
-cPed = cq(b);
-rPed = interp1(c,rc,cPed);
-rPedInc = rPed+k;
-cPedInc = interp1(rc,c,rPedInc);
-cqtPed = interp1(cq,cqt,cPed);
-
-color1 = ax1.Children(end).Color;
-color2 = ax2.Children(end).Color;
-
-axes(ax2)
-plot([cPed cPed],[0 rPed],':','color',color2)
-plot([cPed c(end)],[rPed rPed],':','color',color2)
-plot([cPedInc cPedInc],[0 rPedInc],':','color',color2)
-plot([cPedInc c(end)],[rPedInc rPedInc],':','color',color2)
-axes(ax1)
-plot([cPed cPed],[0 cqtPed],':','color',color1)
-
-
-
-cPed = 50;
-rPed = interp1(c,rc,cPed);
-rPedInc = rPed+k;
-cPedInc = interp1(rc,c,rPedInc);
-cqtPed = interp1(cq,cqt,cPed);
-
-axes(ax2)
-plot([cPed cPed],[0 rPed],':','color',color2)
-plot([cPed c(end)],[rPed rPed],':','color',color2)
-plot([cPedInc cPedInc],[0 rPedInc],':','color',color2)
-plot([cPedInc c(end)],[rPedInc rPedInc],':','color',color2)
-axes(ax1)
-plot([cPed cPed],[0 cqtPed],':','color',color1)
-
-
-
-
-
-
-
-
-axes(ax2)
-plot([t_mC t_mC],ylim,'k')
-
-
-
-% figure('windowstyle','docked')
-% yyaxis left
-% plot(cq,cqt); hold on
-% yLim = ylim; yLim(1) = 0; yLim(2) = 6; ylim(yLim)
-% ylabel('contrast increment threshold')
-% yyaxis right
-% plot(c,resp)
-% yLim = ylim; yLim(2) = 12; ylim(yLim)
-% ylabel('transducer response')
-% xlabel('contrast pedestal')
-% xlim([0 80])
-% 
-% 
-% [a,b] = min(cqt);
-% % cPed = cq(b);
-% cPed = 2;
-% rPed = interp1(c,resp,cPed);
-% rPedInc = rPed+k;
-% cPedInc = interp1(resp,c,rPedInc);
-% cqtPed = interp1(cq,cqt,cPed);
-% 
-% yyaxis right
-% plot([cPed cPed],[0 rPed],':')
-% plot([cPed c(end)],[rPed rPed],':')
-% plot([cPedInc cPedInc],[0 rPedInc],':')
-% plot([cPedInc c(end)],[rPedInc rPedInc],':')
-% yyaxis left
-% % plot([cPed cPed],[0 cqtPed],':')
-% 
-% 
-% 
-% cPed = 10;
-% rPed = interp1(c,resp,cPed);
-% rPedInc = rPed+k;
-% cPedInc = interp1(resp,c,rPedInc);
-% cqtPed = interp1(cq,cqt,cPed);
-% 
-% yyaxis right
-% plot([cPed cPed],[0 rPed],':')
-% plot([cPed c(end)],[rPed rPed],':')
-% plot([cPedInc cPedInc],[0 rPedInc],':')
-% plot([cPedInc c(end)],[rPedInc rPedInc],':')
-% yyaxis left
-% % plot([cPed cPed],[0 cqtPed],':')
-% 
-
-
-%% Practical example
-t_logC = -1.7;
-mask_mC = 75;
 
