@@ -13,7 +13,7 @@ Model, threshold data and fits taken from [Meese, T. S., et al. (2007). "Context
 ## Extra
 doIt_crossOrientation.m : Replotting of data and fits to show how cross-oriented overlay masks at different contrasts can either facilitate or suppress contrast perception at threshold.
 
-<img src="./CRF_SDT_TvC.png" width=100% height=100%>
+<img src="./XorTvC_inkscape.jpg" width=50% height=50%>
 
 ## License
 This work is licensed under a
